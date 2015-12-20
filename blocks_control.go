@@ -1,4 +1,4 @@
-package blockly
+package goblockly
 
 import (
 	"fmt"
@@ -8,9 +8,9 @@ import (
 func ControlIfEvaluator(i *Interpreter, b *Block) Value {
 	var elseIfs int
 	var elses int
-	if b.Mutations != nil {
-		elseIfs = b.Mutations[0].ElseIf
-		elses = b.Mutations[0].Else
+	if b.Mutation != nil {
+		elseIfs = b.Mutation.ElseIf
+		elses = b.Mutation.Else
 	}
 
 	for idx := 0; idx <= elseIfs; idx++ {

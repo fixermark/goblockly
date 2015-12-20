@@ -1,4 +1,4 @@
-package blockly
+package goblockly
 
 import (
 	"math/rand"
@@ -16,11 +16,11 @@ func ListCreateEmptyEvaluator(i *Interpreter, b *Block) Value {
 
 // ListCreateWithEvaluator creates a list with a set of values.
 func ListCreateWithEvaluator(i *Interpreter, b *Block) Value {
-	if len(b.Mutations) == 0 {
+	if b.Mutation == nil {
 		i.Fail("lists_create_with block is missing its count of items.")
 		return nilValue
 	}
-	items := b.Mutations[0].Items
+	items := b.Mutation.Items
 	lv := make([]Value, items)
 
 	for idx, _ := range lv {
@@ -95,11 +95,11 @@ func ListIndexOfEvaluator(i *Interpreter, b *Block) Value {
 // ListGetIndexEvaluator fetches an element from a list at a specific index, and
 // optionally removes that element from the list (mutating the list).
 func ListGetIndexEvaluator(i *Interpreter, b *Block) Value {
-	if len(b.Mutations) == 0 {
+	if b.Mutation == nil {
 		i.Fail("lists_getIndex block is missing mutation information.")
 		return nilValue
 	}
-	hasAt := b.Mutations[0].At
+	hasAt := b.Mutation.At
 
 	listToFetchFrom := i.Evaluate(b.SingleBlockValueWithName(i, "VALUE")).AsList(i)
 	var source int
@@ -187,11 +187,11 @@ func getListIndexValue(i *Interpreter, idxType string, idx int, slotCount int) i
 // ListSetIndexEvaluator changes an element in a list at a specific index or
 // inserts an element into the list (mutating the list).
 func ListSetIndexEvaluator(i *Interpreter, b *Block) Value {
-	if len(b.Mutations) == 0 {
+	if b.Mutation == nil {
 		i.Fail("lists_setIndex block is missing mutation information.")
 		return nilValue
 	}
-	hasAt := b.Mutations[0].At
+	hasAt := b.Mutation.At
 
 	listToSetTo := i.Evaluate(b.SingleBlockValueWithName(i, "LIST")).AsList(i)
 	var destination int
@@ -222,12 +222,12 @@ func ListSetIndexEvaluator(i *Interpreter, b *Block) Value {
 
 // ListGetSublistEvaluator grabs a sub-list of a list.
 func ListGetSublistEvaluator(i *Interpreter, b *Block) Value {
-	if len(b.Mutations) == 0 {
+	if b.Mutation == nil {
 		i.Fail("lists_getSublist block is missing mutation information.")
 		return nilValue
 	}
-	hasAt1 := b.Mutations[0].At1
-	hasAt2 := b.Mutations[0].At2
+	hasAt1 := b.Mutation.At1
+	hasAt2 := b.Mutation.At2
 
 	listToSlice := i.Evaluate(b.SingleBlockValueWithName(i, "LIST")).AsList(i)
 

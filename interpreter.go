@@ -23,7 +23,7 @@
 // If BlockXml contains more than one block, this implies that the Blockly
 // workspace had multiple disconnected blocks in it. You can run the subsequent
 // blocks, but generally these are ignored.
-package blockly
+package goblockly
 
 import (
 	"fmt"
@@ -178,12 +178,10 @@ func (i *Interpreter) Evaluate(b *Block) Value {
 		return nilValue
 	}
 	value := evaluator(i, b)
-	if b.Nexts == nil {
+	if b.Next == nil {
 		return value
 	} else {
-		for _, v := range b.Nexts {
-			value = i.Evaluate(&v)
-		}
+		value = i.Evaluate(b.Next)
 		return value
 	}
 }

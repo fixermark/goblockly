@@ -1,6 +1,6 @@
 // Evaluators for variable blocks
 
-package blockly
+package goblockly
 
 func VariableSetEvaluator(i *Interpreter, b *Block) Value {
 	field := b.FieldWithName("VAR")

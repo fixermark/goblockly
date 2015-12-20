@@ -1,4 +1,4 @@
-package blockly
+package goblockly
 
 import (
 	"encoding/xml"
@@ -19,8 +19,8 @@ type Block struct {
 	Values     []BlockValue     `xml:"value"`
 	Fields     []BlockField     `xml:"field"`
 	Statements []BlockStatement `xml:"statement"`
-	Nexts      []Block          `xml:"next>block"`
-	Mutations  []BlockMutation  `xml:"mutation"`
+	Next       *Block           `xml:"next>block"`
+	Mutation   *BlockMutation   `xml:"mutation"`
 }
 
 // A value in a Blockly block. Values are blocks that will evaluate to a value.

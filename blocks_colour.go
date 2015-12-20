@@ -1,4 +1,4 @@
-package blockly
+package goblockly
 
 import (
 	"math"

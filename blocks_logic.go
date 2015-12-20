@@ -1,6 +1,6 @@
 // Evaluators for logic blocks
 
-package blockly
+package goblockly
 
 func LogicCompareEvaluator(i *Interpreter, b *Block) Value {
 	aBlock := b.SingleBlockValueWithName(i, "A")

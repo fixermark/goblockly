@@ -1,6 +1,6 @@
 // Evaluators for text blocks
 
-package blockly
+package goblockly
 
 func TextEvaluator(i *Interpreter, b *Block) Value {
 	f := b.FieldWithName("TEXT")

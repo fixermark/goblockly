@@ -1,6 +1,6 @@
 // Evaluators for number blocks
 
-package blockly
+package goblockly
 
 import (
 	"math"
