@@ -335,7 +335,6 @@ func (v List) Equals(i *Interpreter, v2 Value) bool {
 }
 
 // IsLessThan returns true if this list is strictly less than the other list.
-// Lists cannot be compared for ordering, so it causes the interpreter to fail.
 func (v List) IsLessThan(i *Interpreter, v2 Value) bool {
 	i.Fail("Lists cannot be compared for greater than or less than.")
 	return false
