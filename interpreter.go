@@ -17,12 +17,9 @@
 //
 // Parse the XML into a BlockXml using the tools in encoding/xml.
 //
-// Run the first block in the XML with:
-//   interpreter.Run(blockXml.Blocks[0])
+// Interpret the XML with
+//   interpreter.Run(blockXml.Blocks)
 //
-// If BlockXml contains more than one block, this implies that the Blockly
-// workspace had multiple disconnected blocks in it. You can run the subsequent
-// blocks, but generally these are ignored.
 package goblockly
 
 import (
@@ -62,6 +59,20 @@ func (evt BreakEvent) Error() string {
 	}
 }
 
+// A Function maps arguments to a body that is executed, and
+// (optionally) a value that is returned.
+//
+// In Blockly, functions are not values.
+type Function struct {
+	// Names of inputs, which become variables defined within the function
+	// while it is evaluated.
+	Inputs []string
+	// (optional) top-level block of the function body
+	Body *Block
+	// (optional) return statement
+	Return *Block
+}
+
 // An Evaluator can evaluate a block, in the current context of the interpreter, into a value.
 type Evaluator func(*Interpreter, *Block) Value
 
@@ -75,6 +86,8 @@ type Interpreter struct {
 	FailHandler func(string)
 	// Variables in an execution cycle of the interpreter
 	Context map[string]Value
+	// Function mappings in an execution cycle of the interpreter
+	Functions map[string]Function
 	// Custom handlers for specific block prefixes. Inserting an evaluator
 	// here will cause all blocks with type "prefix_<something>" to be
 	// handled by the evaluator in key "prefix_". Blocks with a type not in
@@ -128,6 +141,9 @@ func PrepareEvaluators() {
 
 		"variables_set": VariableSetEvaluator,
 		"variables_get": VariableGetEvaluator,
+
+		"procedures_callreturn":   ProceduresFunctionCallEvaluator,
+		"procedures_callnoreturn": ProceduresFunctionCallEvaluator,
 	}
 }
 
@@ -142,9 +158,14 @@ func (i *Interpreter) WriteToConsole(s string) {
 	i.Console.Write([]byte(s + "\n"))
 }
 
-// Run evaluates a top-level block and handles Fail panics by recovering them
-// into the interpreter's FailHandler. It also initializes the Interpreter's Context (i.e. clears all variables).
-func (i *Interpreter) Run(b *Block) {
+// Run evaluates a list of top-level blocks and handles Fail panics by
+// recovering them into the interpreter's FailHandler. It also initializes the
+// Interpreter's Context (i.e. clears all variables).
+//
+// Top-level blocks that are functions definitions (procedures_defnoreturn and
+// procedures_defreturn) are stored as function mappings for calling; all other
+// top-level blocks are evaluated in arbitrary order.
+func (i *Interpreter) Run(b []Block) {
 	defer func() {
 		if r := recover(); r != nil {
 			i.FailHandler(fmt.Sprint(r))
@@ -153,7 +174,49 @@ func (i *Interpreter) Run(b *Block) {
 	}()
 
 	i.Context = make(map[string]Value)
-	i.Evaluate(b)
+	i.Functions = make(map[string]Function)
+	toEvaluate := make([]int, 0, 1)
+	for idx, block := range b {
+		if block.Type == "procedures_defnoreturn" ||
+			block.Type == "procedures_defreturn" {
+			i.DefineFunction(&block)
+		} else {
+			toEvaluate = append(toEvaluate, idx)
+		}
+	}
+	for _, idx := range toEvaluate {
+		i.Evaluate(&b[idx])
+	}
+}
+
+// DefineFunction interprets a function block into a definition of a function.
+func (i *Interpreter) DefineFunction(b *Block) {
+	name := b.SingleFieldWithName(i, "NAME")
+	fmt.Printf("Defining function %s\n", name)
+	if _, ok := i.Functions[name]; ok {
+		i.Fail("Function named '" + name + "' is defined twice.")
+		return
+	}
+
+	var newFunction Function
+
+	if b.Mutation != nil {
+		for _, arg := range b.Mutation.Args {
+			newFunction.Inputs = append(newFunction.Inputs, arg.Name)
+		}
+	}
+	newFunction.Body = b.BlockStatementWithName(i, "STACK")
+	bv := b.BlockValueWithName("RETURN")
+	if bv != nil && len(bv.Blocks) != 0 {
+		if len(bv.Blocks) != 1 {
+			i.Fail("Multiple STACK blocks in function definition for '" + name + "'")
+			return
+		}
+		returnExpression := bv.Blocks[0]
+		newFunction.Return = &returnExpression
+	}
+
+	i.Functions[name] = newFunction
 }
 
 // Evaluate evaluates a specific block by determining what evaluator can consume

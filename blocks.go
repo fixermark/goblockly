@@ -46,14 +46,23 @@ type BlockStatement struct {
 // Modifiers on Blockly blocks. Indicates if a block has special encoding (such
 // as the "elseif" / "elses" mutations on if blocks).
 type BlockMutation struct {
-	At        bool   `xml:"at,attr"`
-	At1       bool   `xml:"at1,attr"`
-	At2       bool   `xml:"at2,attr"`
-	ElseIf    int    `xml:"elseif,attr"`
-	Else      int    `xml:"else,attr"`
-	Items     int    `xml:"items,attr"`
-	Mode      string `xml:"mode,attr"`
-	Statement bool   `xml:"statement,attr"`
+	At         bool               `xml:"at,attr"`
+	At1        bool               `xml:"at1,attr"`
+	At2        bool               `xml:"at2,attr"`
+	ElseIf     int                `xml:"elseif,attr"`
+	Else       int                `xml:"else,attr"`
+	Items      int                `xml:"items,attr"`
+	Mode       string             `xml:"mode,attr"`
+	Statement  bool               `xml:"statement,attr"`
+	Statements bool               `xml:"statements,attr"`
+	Name       string             `xml:"name,attr"`
+	Args       []BlockMutationArg `xml:"arg"`
+}
+
+// An argument mutation. Used with function blocks to indicate arguments to the
+// function.
+type BlockMutationArg struct {
+	Name string `xml:"name,attr"`
 }
 
 // FieldWithName fetches the field with a given name, or returns nil if the
@@ -106,10 +115,9 @@ func (b *Block) SingleBlockValueWithName(i *Interpreter, name string) *Block {
 	return &bv.Blocks[0]
 }
 
-// SingleBlockStatementWIthName retrieves the single block in the block
-// statement with the specified name, or nil. Fails interpretation if there is
-// not a single block in the specified statement.
-func (b *Block) SingleBlockStatementWithName(i *Interpreter, name string) *Block {
+// BlockStatementWithName retrieves the statement with the specified name, or
+// returns nil if the statement doesn't exist.
+func (b *Block) BlockStatementWithName(i *Interpreter, name string) *Block {
 	for _, v := range b.Statements {
 		if v.Name == name {
 			if len(v.Blocks) != 1 {
@@ -119,6 +127,16 @@ func (b *Block) SingleBlockStatementWithName(i *Interpreter, name string) *Block
 			return &v.Blocks[0]
 		}
 	}
-	i.Fail("No statement with name " + name)
 	return nil
+}
+
+// SingleBlockStatementWIthName retrieves the single block in the block
+// statement with the specified name, or nil. Fails interpretation if there is
+// not a single block in the specified statement.
+func (b *Block) SingleBlockStatementWithName(i *Interpreter, name string) *Block {
+	result := b.BlockStatementWithName(i, name)
+	if result == nil {
+		i.Fail("No statement with name " + name)
+	}
+	return result
 }
