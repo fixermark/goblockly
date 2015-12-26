@@ -21,7 +21,6 @@ func ProceduresFunctionCallEvaluator(i *Interpreter, b *Block) Value {
 		i.Fail("Unknown function name '" + b.Mutation.Name + "'")
 		return nilValue
 	}
-	fmt.Printf("Calling function %s\n", b.Mutation.Name)
 	argMap := make(map[string]Value)
 	for idx, arg := range b.Mutation.Args {
 		bv := b.BlockValueWithName(fmt.Sprintf("ARG%d", idx))
@@ -41,16 +40,25 @@ func ProceduresFunctionCallEvaluator(i *Interpreter, b *Block) Value {
 	}
 
 	shadowedVariables := ShadowVariables(i, argMap)
+	defer UnshadowVariables(i, argMap, shadowedVariables)
+
+	var retval Value
 	if function.Body != nil {
-		i.Evaluate(function.Body)
+
+		func() {
+			defer i.CheckReturn(&retval)
+			i.Evaluate(function.Body)
+		}()
 	}
-	var retval Value = nilValue
-	if function.Return != nil {
-		retval = i.Evaluate(function.Return)
-	} else {
-		fmt.Printf("Function return is nil\n")
+	if retval == nil {
+		// No early return; process return expression if it exists to
+		// get retval.
+
+		retval = nilValue
+		if function.Return != nil {
+			retval = i.Evaluate(function.Return)
+		}
 	}
-	UnshadowVariables(i, argMap, shadowedVariables)
 	return retval
 }
 
@@ -77,4 +85,25 @@ func UnshadowVariables(i *Interpreter, newVariables map[string]Value, preShadow 
 			i.Context[k] = oldValue
 		}
 	}
+}
+
+// ProceduresIfReturnEvaluator evaluates the procedures_ifreturn block, which
+// returns (either early or with a different value) if a conditional evaluates
+// to true.
+func ProceduresIfReturnEvaluator(i *Interpreter, b *Block) Value {
+	condition := b.SingleBlockValueWithName(i, "CONDITION")
+	if i.Evaluate(condition).AsBoolean(i) {
+		bv := b.BlockValueWithName("VALUE")
+		if bv == nil || len(bv.Blocks) == 0 {
+			panic(BreakEvent{Then: ThenReturn, ReturnValue: nilValue})
+		}
+		if len(bv.Blocks) != 1 {
+			i.Fail(fmt.Sprintf(
+				"Expected 1 Value block in procedures if-return; got %d",
+				len(bv.Blocks)))
+			return nilValue
+		}
+		panic(BreakEvent{Then: ThenReturn, ReturnValue: i.Evaluate(&bv.Blocks[0])})
+	}
+	return nilValue
 }

@@ -30,12 +30,13 @@ import (
 
 type BreakType int
 
-// Breaks can either be 'break' (end the current loop) or 'continue' (go to
-// next step in the current loop). THese constants indicate which type of break
-// occurred.
+// Breaks can be 'break' (end the current loop), 'continue' (go to next step in
+// the current loop), or 'return' (end the current function, possibly with a
+// return value). These constants indicate which type of break occurred.
 const (
 	ThenBreak BreakType = iota
 	ThenContinue
+	ThenReturn
 )
 
 // BreakEvent is a special type sent via panic to indicate a break or continue
@@ -43,8 +44,13 @@ const (
 // attempt to use a break block outside of a loop, Blockly will still allow the
 // user to send a block in that form to the server, so we panic on breaks to
 // allow the interpreter to handle this state.
+//
+// BreakEvents can also be used by procedures_ifreturn to bail early from a
+// function; in that use case, the ReturnValue is non-nil and specifies what
+// return value came out of the function.
 type BreakEvent struct {
-	Then BreakType
+	Then        BreakType
+	ReturnValue Value
 }
 
 // Error method for BreakEvents (which are panicked as errors).
@@ -144,6 +150,7 @@ func PrepareEvaluators() {
 
 		"procedures_callreturn":   ProceduresFunctionCallEvaluator,
 		"procedures_callnoreturn": ProceduresFunctionCallEvaluator,
+		"procedures_ifreturn":     ProceduresIfReturnEvaluator,
 	}
 }
 
@@ -192,7 +199,6 @@ func (i *Interpreter) Run(b []Block) {
 // DefineFunction interprets a function block into a definition of a function.
 func (i *Interpreter) DefineFunction(b *Block) {
 	name := b.SingleFieldWithName(i, "NAME")
-	fmt.Printf("Defining function %s\n", name)
 	if _, ok := i.Functions[name]; ok {
 		i.Fail("Function named '" + name + "' is defined twice.")
 		return
@@ -257,8 +263,23 @@ func (i *Interpreter) CheckBreak(continuing *bool) {
 	r := recover()
 
 	if r != nil {
-		if breakEvent, ok := r.(BreakEvent); ok {
+		if breakEvent, ok := r.(BreakEvent); ok && breakEvent.Then != ThenReturn {
 			*continuing = breakEvent.Then == ThenContinue
+		} else {
+			panic(r)
+		}
+	}
+}
+
+// CheckReturn is a helper function that checks if a panic was due to a function
+// returning early. If it was not, it re-panicks. If it was, it sets retval to
+// the value returned.
+func (i *Interpreter) CheckReturn(retval *Value) {
+	r := recover()
+
+	if r != nil {
+		if breakEvent, ok := r.(BreakEvent); ok && breakEvent.Then == ThenReturn {
+			*retval = breakEvent.ReturnValue
 		} else {
 			panic(r)
 		}
