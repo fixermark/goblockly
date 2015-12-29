@@ -3,7 +3,6 @@
 package goblockly
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
 	"sort"
@@ -291,11 +290,9 @@ func NumberOnListEvaluator(i *Interpreter, b *Block) Value {
 		}
 		maxCount := 0
 		var modes []float64
-		fmt.Printf("mode test -- %v\n", counts)
 
 		for k, v := range counts {
 			if v > maxCount {
-				fmt.Printf("New max count %d for %f\n", v, k)
 				maxCount = v
 				modes = []float64{k}
 			} else if v == maxCount {

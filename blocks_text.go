@@ -132,8 +132,68 @@ func TextIndexOfEvaluator(i *Interpreter, b *Block) Value {
 
 // TextGetSubstringEvaluator returns the specified substring.
 func TextGetSubstringEvaluator(i *Interpreter, b *Block) Value {
-	// TODO(mtomczak): Implement.
-	return nilValue
+	input := i.Evaluate(b.SingleBlockValueWithName(i, "STRING")).AsString(i)
+
+	// field WHERE1, WHERE2
+	where1 := b.SingleFieldWithName(i, "WHERE1")
+	where2 := b.SingleFieldWithName(i, "WHERE2")
+
+	var at1, at2 int
+	switch where1 {
+	case "FROM_START":
+		at1 = int(i.Evaluate(b.SingleBlockValueWithName(i, "AT1")).AsNumber(i)) - 1
+	case "FROM_END":
+		at1 = len(input) - int(i.Evaluate(b.SingleBlockValueWithName(i, "AT1")).AsNumber(i))
+	case "FIRST":
+		at1 = 0
+	}
+	switch where2 {
+	case "FROM_START":
+		at2 = int(i.Evaluate(b.SingleBlockValueWithName(i, "AT2")).AsNumber(i))
+	case "FROM_END":
+		at2 = len(input) - int(i.Evaluate(b.SingleBlockValueWithName(i, "AT2")).AsNumber(i)) + 1
+	case "LAST":
+		at2 = len(input)
+	}
+
+	if at1 < 0 {
+
+	}
+
+	if at2 < at1 {
+		at1, at2 = at2, at1
+	}
+
+	if at1 < 0 {
+		i.Fail(fmt.Sprintf("Attempted to substring from character %d, "+
+			"which is before the first character.", at1))
+		return nilValue
+	}
+	if at2 > len(input) {
+		i.Fail(fmt.Sprintf("Attempted to substring to character %d, "+
+			"which is after the last character.", at2))
+		return nilValue
+	}
+
+	return StringValue(input[at1:at2])
+}
+
+// TextTrimEvaluator removes spaces from either or both ends of an input.
+func TextTrimEvaluator(i *Interpreter, b *Block) Value {
+	toTrim := i.Evaluate(b.SingleBlockValueWithName(i, "TEXT")).AsString(i)
+	mode := b.SingleFieldWithName(i, "MODE")
+	switch mode {
+	case "BOTH":
+		return StringValue(strings.Trim(toTrim, " "))
+	case "LEFT":
+		return StringValue(strings.TrimLeft(toTrim, " "))
+	case "RIGHT":
+		return StringValue(strings.TrimRight(toTrim, " "))
+	default:
+		i.Fail("Trim doesn't know how to trim " + mode)
+		return nilValue
+
+	}
 }
 
 // TextAppendEvaluator appends the specified text to the value in the specified
@@ -148,4 +208,21 @@ func TextAppendEvaluator(i *Interpreter, b *Block) Value {
 		i.Context[varName] = StringValue(val.AsString(i) + toAppend)
 	}
 	return nilValue
+}
+
+// TextChangeCaseEvaluator changes the case of the text.
+func TextChangeCaseEvaluator(i *Interpreter, b *Block) Value {
+	input := i.Evaluate(b.SingleBlockValueWithName(i, "TEXT")).AsString(i)
+	newCase := b.SingleFieldWithName(i, "CASE")
+	switch newCase {
+	case "UPPERCASE":
+		return StringValue(strings.ToUpper(input))
+	case "LOWERCASE":
+		return StringValue(strings.ToLower(input))
+	case "TITLECASE":
+		return StringValue(strings.Title(strings.ToLower(input)))
+	default:
+		i.Fail("Don't know how to change text case to " + newCase)
+		return nilValue
+	}
 }

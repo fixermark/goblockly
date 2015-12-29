@@ -143,8 +143,10 @@ func PrepareEvaluators() {
 		"text_isEmpty":      TextIsEmptyEvaluator,
 		"text_charAt":       TextCharAtEvaluator,
 		"text_indexOf":      TextIndexOfEvaluator,
-		"text_getSubstring": TextGetSubstringEvaluator,
 		"text_append":       TextAppendEvaluator,
+		"text_getSubstring": TextGetSubstringEvaluator,
+		"text_trim":         TextTrimEvaluator,
+		"text_changeCase":   TextChangeCaseEvaluator,
 
 		"lists_create_empty": ListCreateEmptyEvaluator,
 		"lists_create_with":  ListCreateWithEvaluator,

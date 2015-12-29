@@ -240,7 +240,7 @@ func TestCoercions(t *testing.T) {
 			conversion: func() interface{} {
 				return colourValue.AsString(i)
 			},
-			expectedValue: "0a141e",
+			expectedValue: "#0a141e",
 		},
 		{
 			name: "colour to number",

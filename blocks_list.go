@@ -148,7 +148,7 @@ func getListIndexValue(i *Interpreter, idxType string, idx int, slotCount int) i
 		return idx - 1
 	case "FROM_END":
 		if idx < 1 {
-			i.Fail("Lists are indexed from 1, but I was given " +
+			i.Fail("Lists are indexed from 0 at end, but I was given " +
 				"index " + strconv.Itoa(idx))
 			return 0
 		}
@@ -204,6 +204,7 @@ func ListSetIndexEvaluator(i *Interpreter, b *Block) Value {
 	if mode == "INSERT" {
 		slots += 1
 	}
+	where := b.SingleFieldWithName(i, "WHERE")
 
 	setIdx := getListIndexValue(i,
 		b.SingleFieldWithName(i, "WHERE"),
@@ -213,6 +214,9 @@ func ListSetIndexEvaluator(i *Interpreter, b *Block) Value {
 	case "SET":
 		(*listToSetTo.Values)[setIdx] = valueToInsert
 	case "INSERT":
+		if where == "FROM_END" {
+			setIdx -= 1
+		}
 		listToSetTo.InsertElementAtIndex(i, setIdx, valueToInsert)
 	default:
 		i.Fail("Don't know how to '" + mode + "' on a list.")

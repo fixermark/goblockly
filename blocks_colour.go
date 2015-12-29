@@ -54,7 +54,7 @@ func ColourRgbEvaluator(i *Interpreter, b *Block) Value {
 
 // helper function to compute blends.
 func blend(c1, c2 uint8, ratio float64) uint8 {
-	return uint8(float64(c1)*(1.0-ratio) + float64(c2)*ratio)
+	return uint8(math.Floor((float64(c1)*(1.0-ratio) + float64(c2)*ratio) + 0.5))
 }
 
 // ColourBlendEvaluator creates a colour by blending two input colours with a

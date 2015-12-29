@@ -150,7 +150,13 @@ func (v StringValue) AsList(i *Interpreter) List {
 
 // Equals returns true if and only if v2 and this value are Go equal (meaning
 // they must also be the same type, so number 2 != "2").
+//
+// Exception: As per the unit test in colour.xml, strings and colour are
+// directly comparable.
 func (v StringValue) Equals(i *Interpreter, v2 Value) bool {
+	if vcolour, ok := v2.(Colour); ok {
+		return string(v) == vcolour.AsString(i)
+	}
 	return v == v2
 }
 
@@ -222,7 +228,7 @@ func (v Colour) AsString(*Interpreter) string {
 	digits[1] = v.Green
 	digits[2] = v.Blue
 
-	return hex.EncodeToString(digits)
+	return "#" + hex.EncodeToString(digits)
 }
 
 func (v Colour) AsNumber(i *Interpreter) float64 {
@@ -245,6 +251,9 @@ func (v Colour) AsList(i *Interpreter) List {
 }
 
 func (v Colour) Equals(i *Interpreter, value Value) bool {
+	if vstring, ok := value.(StringValue); ok {
+		return v.AsString(i) == string(vstring)
+	}
 	return v == value
 }
 
