@@ -2,6 +2,7 @@ package goblockly
 
 import (
 	"fmt"
+	"math"
 )
 
 // ControlIfEvaluator evaluates if / elseif / else blocks.
@@ -72,21 +73,54 @@ func ControlWhileUntil(i *Interpreter, b *Block) Value {
 	return v
 }
 
+// ControlForEvaluator evaluates a Blockly for (from-value, to-value, by-value) block.
+//
+// Note that Blockly includes a couple idiosynchrasies in its for manipulation
+// (see
+// https://github.com/google/blockly/blob/master/generators/javascript/loops.js
+// for details):
+//
+// FROM, TO, and BY are auto-populated with 0, 0, 1 (respectively) if not specified
+//
+// BY is always considered to be positive (absolute value taken). If FROM <= TO,
+// BY is used to count up; if FROM > TO, BY is used to count down.
 func ControlForEvaluator(i *Interpreter, b *Block) Value {
 	varName := b.FieldWithName("VAR")
 	if varName == nil {
 		i.Fail("No VAR field in controls_for")
 		return nilValue
 	}
-	fromValue := i.Evaluate(b.SingleBlockValueWithName(i, "FROM")).AsNumber(i)
-	toValue := i.Evaluate(b.SingleBlockValueWithName(i, "TO")).AsNumber(i)
-	byValue := i.Evaluate(b.SingleBlockValueWithName(i, "BY")).AsNumber(i)
+	// As copied from Blockly's Javascript generator
+	// ,
+	// FROM, TO, and BY are auto-populated with 0, 0, 1 (respectively) if
+	// not specified.
+	valueOrDefault := func(valueName string, defaultValue float64) float64 {
+		if b.BlockValueWithName(valueName) == nil {
+			return defaultValue
+		}
+		return i.Evaluate(b.SingleBlockValueWithName(i, valueName)).AsNumber(i)
+	}
+	fromValue := valueOrDefault("FROM", 0)
+	toValue := valueOrDefault("TO", 0)
+	byValue := math.Abs(valueOrDefault("BY", 1))
 	body := b.SingleBlockStatementWithName(i, "DO")
 	running := true
 	var v Value
 	v = nilValue
 
-	for ; (fromValue <= toValue) && running; fromValue += byValue {
+	var comparator func(a, b float64) bool
+	if fromValue <= toValue {
+		comparator = func(a, b float64) bool {
+			return a <= b
+		}
+	} else {
+		comparator = func(a, b float64) bool {
+			return a >= b
+		}
+		byValue = -byValue
+	}
+
+	for ; comparator(fromValue, toValue) && running; fromValue += byValue {
 		i.Context[varName.Value] = NumberValue(fromValue)
 		func() {
 			defer i.CheckBreak(&running)
