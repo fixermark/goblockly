@@ -7,6 +7,9 @@ import (
 	"testing"
 )
 
+// checkFailInterpreter is a testing utility to verify that the interpreter
+// failed while running test. Interpreter failure is represented by a panic, so
+// we're just catching panics here.
 func checkFailInterpreter(t *testing.T, test func()) {
 	defer func() {
 		if r := recover(); r != nil {
