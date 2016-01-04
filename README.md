@@ -27,28 +27,29 @@ How do I use it?
 
 Details are provided in the godocs of the library, but the basic overview is:
 
-    import (
-    	"bytes"
-    	"encoding/xml"
-    )
-
-    // XML may have come from client request or database store; it's the output of
-    Blockly.Xml.domToText in the Blockly library
-    func interpretBlockly(string xml) string {
-    	var blocks BlockXml
-    	if err := xml.Unmarshal(xmldata, &blocks); err {
-    		// Handle malformed XML here
-    	}
-    	var b bytes.Buffer
-    	var i Interpreter
-    	i.Console = &b
-    	i.FailHandler = func(reason string) {
-    		// Handle parser failure here
-    	}
-    	i.Run(blocks.Blocks)
-    	consoleOutput := b.String()
-    	return consoleOutput
-    }
+```go
+import (
+	"bytes"
+	"encoding/xml"
+)
+// XML may have come from client request or database store; it's the output of
+Blockly.Xml.domToText in the Blockly library
+func interpretBlockly(string xml) string {
+	var blocks BlockXml
+	if err := xml.Unmarshal(xmldata, &blocks); err {
+		// Handle malformed XML here
+	}
+	var b bytes.Buffer
+	var i Interpreter
+	i.Console = &b
+	i.FailHandler = func(reason string) {
+		// Handle parser failure here
+	}
+	i.Run(blocks.Blocks)
+	consoleOutput := b.String()
+	return consoleOutput
+	}
+```
 
 The code runs server-side; how secure is it?
 --------------------------------------------
