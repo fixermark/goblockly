@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-// Blockly Interpreter
+// GoBlockly Interpreter
 //
 // Interpreter for the Blockly programming language (https://developers.google.com/blockly).
 //
