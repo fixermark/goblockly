@@ -32,6 +32,7 @@ import (
 	"bytes"
 	"encoding/xml"
 )
+
 // XML may have come from client request or database store; it's the output of
 Blockly.Xml.domToText in the Blockly library
 func interpretBlockly(string xml) string {
@@ -48,7 +49,7 @@ func interpretBlockly(string xml) string {
 	i.Run(blocks.Blocks)
 	consoleOutput := b.String()
 	return consoleOutput
-	}
+}
 ```
 
 The code runs server-side; how secure is it?
